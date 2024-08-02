@@ -9,7 +9,6 @@ type Move struct {
 	ToRow             int    `json:"toRow"`
 	ToCol             int    `json:"toCol"`
 	PlayerId          string `json:"playerId"`
-	GameId            string `json:"gameId"`
 }
 
 func UnmarshalMove(str string) (*Move, error) {

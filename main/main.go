@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/neutralusername/Systemge/Config"
 	"github.com/neutralusername/Systemge/Dashboard"
-	"github.com/neutralusername/Systemge/Helpers"
 	"github.com/neutralusername/Systemge/Node"
 	"github.com/neutralusername/Systemge/Tools"
 )
@@ -41,32 +40,6 @@ func main() {
 				InfoLoggerPath:    LOGGER_PATH,
 				WarningLoggerPath: LOGGER_PATH,
 				ErrorLoggerPath:   LOGGER_PATH,
-			},
-			SystemgeConfig: &Config.Systemge{
-				HandleMessagesSequentially: false,
-
-				SyncRequestTimeoutMs:            10000,
-				TcpTimeoutMs:                    5000,
-				MaxConnectionAttempts:           0,
-				ConnectionAttemptDelayMs:        1000,
-				StopAfterOutgoingConnectionLoss: true,
-				ServerConfig: &Config.TcpServer{
-					Port:        60001,
-					TlsCertPath: "MyCertificate.crt",
-					TlsKeyPath:  "MyKey.key",
-				},
-				EndpointConfigs: []*Config.TcpEndpoint{
-					{
-						Address: "localhost:60001",
-						TlsCert: Helpers.GetFileContent("MyCertificate.crt"),
-						Domain:  "example.com",
-					},
-				},
-				IncomingMessageByteLimit: 0,
-				MaxPayloadSize:           0,
-				MaxTopicSize:             0,
-				MaxSyncTokenSize:         0,
-				SyncResponseLimit:        1,
 			},
 			WebsocketConfig: &Config.Websocket{
 				Pattern: "/ws",

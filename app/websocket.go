@@ -2,7 +2,6 @@ package app
 
 import (
 	"SystemgeSampleChessServer/topics"
-	"strings"
 
 	"github.com/neutralusername/Systemge/Error"
 	"github.com/neutralusername/Systemge/Helpers"
@@ -18,57 +17,35 @@ func (app *App) GetWebsocketMessageHandlers() map[string]Node.WebsocketMessageHa
 			if !node.WebsocketClientExists(blackId) {
 				return Error.New("Opponent does not exist", nil)
 			}
-			responseChannel, err := node.SyncMessage(topics.STARTGAME, Helpers.JsonMarshal([]string{whiteId, blackId}))
-			if err != nil {
-				return Error.New("Error sending start message", err)
+			app.mutex.Lock()
+			if app.games[whiteId] != nil || app.games[blackId] != nil {
+				app.mutex.Unlock()
+				return Error.New("Already in a game", nil)
 			}
-			response, err := responseChannel.ReceiveResponse()
+			err := node.AddToWebsocketGroup(whiteId+"-"+blackId, whiteId, blackId)
 			if err != nil {
-				return Error.New("Error receiving start response", err)
-			}
-			if response.GetTopic() == Message.TOPIC_FAILURE {
-				return Error.New(response.GetPayload(), nil)
-			}
-			err = node.AddToWebsocketGroup(whiteId+"-"+blackId, whiteId, blackId)
-			if err != nil {
-				responseChannel, err := node.SyncMessage(topics.ENDGAME, whiteId+"-"+blackId)
-				if err != nil {
-					if errorLogger := node.GetErrorLogger(); errorLogger != nil {
-						errorLogger.Log(Error.New("Error sending endGame message", err).Error())
-					}
-				}
-				response, err := responseChannel.ReceiveResponse()
-				if err != nil {
-					if errorLogger := node.GetErrorLogger(); errorLogger != nil {
-						errorLogger.Log(Error.New("Error receiving endGame response", err).Error())
-					}
-				}
-				if response.GetTopic() == Message.TOPIC_FAILURE {
-					if errorLogger := node.GetErrorLogger(); errorLogger != nil {
-						errorLogger.Log(Error.New(response.GetPayload(), nil).Error())
-					}
-				}
+				app.mutex.Unlock()
 				return Error.New("Error adding to group", err)
 			}
-			node.WebsocketGroupcast(whiteId+"-"+blackId, Message.NewAsync(topics.STARTGAME, response.GetPayload()))
+			game := newChessGame(whiteId, blackId)
+			app.games[whiteId] = game
+			app.games[blackId] = game
+			app.mutex.Unlock()
+			node.WebsocketGroupcast(whiteId+"-"+blackId, Message.NewAsync(topics.STARTGAME, game.marshalBoard()))
 			return nil
 		},
 		topics.ENDGAME: func(node *Node.Node, websocketClient *Node.WebsocketClient, message *Message.Message) error {
-			responseChannel, err := node.SyncMessage(topics.ENDGAME, websocketClient.GetId())
-			if err != nil {
-				return Error.New("Error sending endGame message", err)
+			app.mutex.Lock()
+			game := app.games[websocketClient.GetId()]
+			if game == nil {
+				app.mutex.Unlock()
+				return Error.New("Game does not exist", nil)
 			}
-			response, err := responseChannel.ReceiveResponse()
-			if err != nil {
-				return Error.New("Error receiving endGame response", err)
-			}
-			if response.GetTopic() == Message.TOPIC_FAILURE {
-				return Error.New(response.GetPayload(), nil)
-			}
-			gameId := response.GetPayload()
-			ids := strings.Split(gameId, "-")
-			node.WebsocketGroupcast(gameId, Message.NewAsync(topics.ENDGAME, ""))
-			node.RemoveFromWebsocketGroup(gameId, ids...)
+			delete(app.games, game.whiteId)
+			delete(app.games, game.blackId)
+			app.mutex.Unlock()
+			node.WebsocketGroupcast(game.whiteId+"-"+game.blackId, Message.NewAsync(topics.ENDGAME, ""))
+			node.RemoveFromWebsocketGroup(game.whiteId+"-"+game.blackId, game.whiteId, game.blackId)
 			return nil
 		},
 		topics.MOVE: func(node *Node.Node, websocketClient *Node.WebsocketClient, message *Message.Message) error {
@@ -77,25 +54,34 @@ func (app *App) GetWebsocketMessageHandlers() map[string]Node.WebsocketMessageHa
 				return Error.New("Error unmarshalling move", err)
 			}
 			move.PlayerId = websocketClient.GetId()
-			responseChannel, err := node.SyncMessage(topics.MOVE, Helpers.JsonMarshal(move))
+			app.mutex.Lock()
+			defer app.mutex.Unlock()
+			game := app.games[move.PlayerId]
+			if game == nil {
+				return Error.New("Game does not exist", nil)
+			}
+			move, err = game.handleMoveRequest(move)
 			if err != nil {
-				return Error.New("Error sending move message", err)
+				return err
 			}
-			response, err := responseChannel.ReceiveResponse()
-			if err != nil {
-				return Error.New("Error receiving move response", err)
-			}
-			if response.GetTopic() == Message.TOPIC_FAILURE {
-				return Error.New(response.GetPayload(), nil)
-			}
-			responseMove, err := UnmarshalMove(response.GetPayload())
-			if err != nil {
-				return Error.New("Error unmarshalling response move", err)
-			}
-			node.WebsocketGroupcast(responseMove.GameId, Message.NewAsync(topics.MOVE, Helpers.JsonMarshal(responseMove)))
+			node.WebsocketGroupcast(game.whiteId+"-"+game.blackId, Message.NewAsync(topics.MOVE, Helpers.JsonMarshal(move)))
 			return nil
 		},
 	}
+}
+
+func (game *ChessGame) handleMoveRequest(move *Move) (*Move, error) {
+	if game.isWhiteTurn() && move.PlayerId != game.whiteId {
+		return nil, Error.New("Not your turn", nil)
+	}
+	if !game.isWhiteTurn() && move.PlayerId != game.blackId {
+		return nil, Error.New("Not your turn", nil)
+	}
+	chessMove, err := game.move(move)
+	if err != nil {
+		return nil, Error.New("Invalid move", err)
+	}
+	return chessMove, nil
 }
 
 func (app *App) OnConnectHandler(node *Node.Node, websocketClient *Node.WebsocketClient) {
@@ -109,23 +95,15 @@ func (app *App) OnConnectHandler(node *Node.Node, websocketClient *Node.Websocke
 }
 
 func (app *App) OnDisconnectHandler(node *Node.Node, websocketClient *Node.WebsocketClient) {
-	responseChannel, err := node.SyncMessage(topics.ENDGAME, websocketClient.GetId())
-	if err != nil {
-		if errorLogger := node.GetErrorLogger(); errorLogger != nil {
-			errorLogger.Log(Error.New("Error sending endGame message", err).Error())
-		}
-	}
-	response, err := responseChannel.ReceiveResponse()
-	if err != nil {
-		if errorLogger := node.GetErrorLogger(); errorLogger != nil {
-			errorLogger.Log(Error.New("Error receiving endGame response", err).Error())
-		}
-		return
-	}
-	if response.GetTopic() == Message.TOPIC_SUCCESS {
-		gameId := response.GetPayload()
-		ids := strings.Split(gameId, "-")
-		node.WebsocketGroupcast(gameId, Message.NewAsync("propagate_gameEnd", ""))
-		node.RemoveFromWebsocketGroup(gameId, ids...)
+	app.mutex.Lock()
+	game := app.games[websocketClient.GetId()]
+	if game != nil {
+		delete(app.games, game.whiteId)
+		delete(app.games, game.blackId)
+		app.mutex.Unlock()
+		node.WebsocketGroupcast(game.whiteId+"-"+game.blackId, Message.NewAsync(topics.ENDGAME, ""))
+		node.RemoveFromWebsocketGroup(game.whiteId+"-"+game.blackId, game.whiteId, game.blackId)
+	} else {
+		app.mutex.Unlock()
 	}
 }
