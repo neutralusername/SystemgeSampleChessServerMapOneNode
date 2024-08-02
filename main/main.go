@@ -36,7 +36,7 @@ func main() {
 	},
 		Node.New(&Config.NewNode{
 			NodeConfig: &Config.Node{
-				Name:              "nodeWebsocketHTTP",
+				Name:              "node",
 				RandomizerSeed:    Tools.GetSystemTime(),
 				InfoLoggerPath:    LOGGER_PATH,
 				WarningLoggerPath: LOGGER_PATH,

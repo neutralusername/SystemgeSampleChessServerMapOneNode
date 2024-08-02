@@ -1,4 +1,4 @@
-package dto
+package app
 
 import "encoding/json"
 

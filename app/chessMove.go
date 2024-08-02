@@ -1,12 +1,10 @@
 package app
 
 import (
-	"SystemgeSampleChessServer/dto"
-
 	"github.com/neutralusername/Systemge/Error"
 )
 
-func (game *ChessGame) move(move *dto.Move) (*dto.Move, error) {
+func (game *ChessGame) move(move *Move) (*Move, error) {
 	piece := game.board[move.FromRow][move.FromCol]
 	if piece == nil {
 		return nil, Error.New("no piece at from coordinates", nil)

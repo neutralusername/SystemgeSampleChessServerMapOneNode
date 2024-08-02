@@ -1,7 +1,6 @@
 package app
 
 import (
-	"SystemgeSampleChessServer/dto"
 	"strings"
 
 	"github.com/neutralusername/Systemge/Tools"
@@ -11,7 +10,7 @@ type ChessGame struct {
 	board   [8][8]Piece
 	blackId string
 	whiteId string
-	moves   []*dto.Move
+	moves   []*Move
 }
 
 func newChessGame(whiteId string, blackId string) *ChessGame {

@@ -1,7 +1,6 @@
 package app
 
 import (
-	"SystemgeSampleChessServer/dto"
 	"SystemgeSampleChessServer/topics"
 	"strings"
 
@@ -73,7 +72,7 @@ func (app *App) GetWebsocketMessageHandlers() map[string]Node.WebsocketMessageHa
 			return nil
 		},
 		topics.MOVE: func(node *Node.Node, websocketClient *Node.WebsocketClient, message *Message.Message) error {
-			move, err := dto.UnmarshalMove(message.GetPayload())
+			move, err := UnmarshalMove(message.GetPayload())
 			if err != nil {
 				return Error.New("Error unmarshalling move", err)
 			}
@@ -89,7 +88,7 @@ func (app *App) GetWebsocketMessageHandlers() map[string]Node.WebsocketMessageHa
 			if response.GetTopic() == Message.TOPIC_FAILURE {
 				return Error.New(response.GetPayload(), nil)
 			}
-			responseMove, err := dto.UnmarshalMove(response.GetPayload())
+			responseMove, err := UnmarshalMove(response.GetPayload())
 			if err != nil {
 				return Error.New("Error unmarshalling response move", err)
 			}

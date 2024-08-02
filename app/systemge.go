@@ -1,7 +1,6 @@
 package app
 
 import (
-	"SystemgeSampleChessServer/dto"
 	"SystemgeSampleChessServer/topics"
 	"encoding/json"
 
@@ -16,7 +15,7 @@ func (app *App) GetSyncMessageHandlers() map[string]Node.SyncMessageHandler {
 		topics.MOVE: func(node *Node.Node, message *Message.Message) (string, error) {
 			app.mutex.Lock()
 			defer app.mutex.Unlock()
-			move, err := dto.UnmarshalMove(message.GetPayload())
+			move, err := UnmarshalMove(message.GetPayload())
 			if err != nil {
 				return "", Error.New("Error unmarshalling move", err)
 			}
@@ -62,7 +61,7 @@ func (app *App) GetSyncMessageHandlers() map[string]Node.SyncMessageHandler {
 	}
 }
 
-func (game *ChessGame) handleMoveRequest(move *dto.Move) (*dto.Move, error) {
+func (game *ChessGame) handleMoveRequest(move *Move) (*Move, error) {
 	if game.isWhiteTurn() && move.PlayerId != game.whiteId {
 		return nil, Error.New("Not your turn", nil)
 	}
