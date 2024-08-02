@@ -18,32 +18,29 @@ func (app *App) GetWebsocketMessageHandlers() map[string]Node.WebsocketMessageHa
 				return Error.New("Opponent does not exist", nil)
 			}
 			app.mutex.Lock()
+			defer app.mutex.Unlock()
 			if app.games[whiteId] != nil || app.games[blackId] != nil {
-				app.mutex.Unlock()
 				return Error.New("Already in a game", nil)
 			}
 			err := node.AddToWebsocketGroup(whiteId+"-"+blackId, whiteId, blackId)
 			if err != nil {
-				app.mutex.Unlock()
 				return Error.New("Error adding to group", err)
 			}
 			game := newChessGame(whiteId, blackId)
 			app.games[whiteId] = game
 			app.games[blackId] = game
-			app.mutex.Unlock()
 			node.WebsocketGroupcast(whiteId+"-"+blackId, Message.NewAsync(topics.STARTGAME, game.marshalBoard()))
 			return nil
 		},
 		topics.ENDGAME: func(node *Node.Node, websocketClient *Node.WebsocketClient, message *Message.Message) error {
 			app.mutex.Lock()
+			defer app.mutex.Unlock()
 			game := app.games[websocketClient.GetId()]
 			if game == nil {
-				app.mutex.Unlock()
 				return Error.New("Game does not exist", nil)
 			}
 			delete(app.games, game.whiteId)
 			delete(app.games, game.blackId)
-			app.mutex.Unlock()
 			node.WebsocketGroupcast(game.whiteId+"-"+game.blackId, Message.NewAsync(topics.ENDGAME, ""))
 			node.RemoveFromWebsocketGroup(game.whiteId+"-"+game.blackId, game.whiteId, game.blackId)
 			return nil
@@ -96,14 +93,13 @@ func (app *App) OnConnectHandler(node *Node.Node, websocketClient *Node.Websocke
 
 func (app *App) OnDisconnectHandler(node *Node.Node, websocketClient *Node.WebsocketClient) {
 	app.mutex.Lock()
+	defer app.mutex.Unlock()
 	game := app.games[websocketClient.GetId()]
 	if game != nil {
 		delete(app.games, game.whiteId)
 		delete(app.games, game.blackId)
-		app.mutex.Unlock()
+
 		node.WebsocketGroupcast(game.whiteId+"-"+game.blackId, Message.NewAsync(topics.ENDGAME, ""))
 		node.RemoveFromWebsocketGroup(game.whiteId+"-"+game.blackId, game.whiteId, game.blackId)
-	} else {
-		app.mutex.Unlock()
 	}
 }
