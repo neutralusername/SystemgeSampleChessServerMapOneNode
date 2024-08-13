@@ -23,8 +23,24 @@ func main() {
 		ServerConfig: &Config.TcpServer{
 			Port: 8081,
 		},
-		NodeStatusIntervalMs:           1000,
-		NodeSystemgeCounterIntervalMs:  1000,
+		NodeStatusIntervalMs: 1000,
+
+		NodeSystemgeClientCounterIntervalMs:             1000,
+		NodeSystemgeClientRateLimitCounterIntervalMs:    1000,
+		NodeSystemgeClientConnectionCounterIntervalMs:   1000,
+		NodeSystemgeClientAsyncMessageCounterIntervalMs: 1000,
+		NodeSystemgeClientSyncResponseCounterIntervalMs: 1000,
+		NodeSystemgeClientSyncRequestCounterIntervalMs:  1000,
+		NodeSystemgeClientTopicCounterIntervalMs:        1000,
+
+		NodeSystemgeServerCounterIntervalMs:             1000,
+		NodeSystemgeServerRateLimitCounterIntervalMs:    1000,
+		NodeSystemgeServerConnectionCounterIntervalMs:   1000,
+		NodeSystemgeServerAsyncMessageCounterIntervalMs: 1000,
+		NodeSystemgeServerSyncResponseCounterIntervalMs: 1000,
+		NodeSystemgeServerSyncRequestCounterIntervalMs:  1000,
+		NodeSystemgeServerTopicCounterIntervalMs:        1000,
+
 		NodeWebsocketCounterIntervalMs: 1000,
 		HeapUpdateIntervalMs:           1000,
 		NodeSpawnerCounterIntervalMs:   1000,
