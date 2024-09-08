@@ -48,5 +48,7 @@ github.com/neutralusername/Systemge v0.0.0-20240908104002-079fdf8385e3 h1:egjbqA
 github.com/neutralusername/Systemge v0.0.0-20240908104002-079fdf8385e3/go.mod h1:xUsJZVkfPHoEJ1dH+ZRM7nBiQenuObLGUYCsJLpcO4U=
 github.com/neutralusername/Systemge v0.0.0-20240908110831-996120e71837 h1:5pxPaNabCLsnSuPqcLt+9pLW/RUimd63plEmT7OJLyI=
 github.com/neutralusername/Systemge v0.0.0-20240908110831-996120e71837/go.mod h1:xUsJZVkfPHoEJ1dH+ZRM7nBiQenuObLGUYCsJLpcO4U=
+github.com/neutralusername/Systemge v0.0.0-20240908111150-757b7a115a45 h1:FKV/urwNDIFtiZNP8PDydurU6Am+gu3kTiOMEX/A/cI=
+github.com/neutralusername/Systemge v0.0.0-20240908111150-757b7a115a45/go.mod h1:xUsJZVkfPHoEJ1dH+ZRM7nBiQenuObLGUYCsJLpcO4U=
 golang.org/x/oauth2 v0.21.0 h1:tsimM75w1tF/uws5rbeHzIWxEqElMehnc+iW793zsZs=
 golang.org/x/oauth2 v0.21.0/go.mod h1:XYTD2NtWslqkgxebSiOHnXEap4TF09sJSc7H1sXbhtI=
