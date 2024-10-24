@@ -12,6 +12,6 @@ require (
 )
 
 require (
-	github.com/neutralusername/systemge v0.0.0-20241024160200-26abf56e7c16 // indirect
+	github.com/neutralusername/systemge v0.0.0-20241024160533-a0b1b7996b37 // indirect
 	golang.org/x/oauth2 v0.21.0 // indirect
 )
